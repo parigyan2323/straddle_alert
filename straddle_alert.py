@@ -31,7 +31,8 @@ CHAT_ID = os.environ.get("CHAT_ID")
 # -------- EMAIL --------
 EMAIL = os.environ.get("EMAIL")
 APP_PASSWORD = os.environ.get("APP_PASSWORD")
-TO_EMAIL = ["barmanparigyan@gmail.com", "abhigyanbarman@gmail.com"]
+_TO_EMAIL_DEFAULT = "barmanparigyan@gmail.com,abhigyanbarman@gmail.com"
+TO_EMAIL = os.environ.get("TO_EMAIL", _TO_EMAIL_DEFAULT).split(",")
 
 # -------- GLOBALS --------
 ce_price = 0
