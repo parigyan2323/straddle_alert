@@ -40,11 +40,8 @@ last_alerted = False
 
 # -------- FUNCTIONS --------
 def get_level():
-    try:
-        with open("level.txt", "r") as f:
-            return float(f.read().strip())
-    except:
-        return None
+    level = os.environ.get("level")
+    return float(level) if level else None
 
 def send_telegram(msg):
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
