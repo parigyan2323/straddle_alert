@@ -2,40 +2,36 @@ from fyers_apiv3.FyersWebsocket import data_ws
 import requests
 import smtplib
 from email.mime.text import MIMEText
+import os
 
 # -------- CONFIG --------
-CLIENT_ID = "XOWXNJIS8V-100"
-ACCESS_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOlsiZDoxIiwiZDoyIiwieDowIiwieDoxIiwieDoyIl0sImF0X2hhc2giOiJnQUFBQUFCcF9BdExXb0lMMWlldG1KLTcyb1hfS2paWnVoQW9oeE9oRUhGWXg1dkx4NTBNOFhNUkx0UVo4bXQxbzc4RFJOdklfdE1QdG5OX3JiZWtMaTE5VHFpdkU2UFprVHduOG1iV2ZoNmZaX0c3bEN3UThlOD0iLCJkaXNwbGF5X25hbWUiOiIiLCJvbXMiOiJLMSIsImhzbV9rZXkiOiIyMjU2ODcwY2FlNjQzNTFlNDFkZjJiNDdiZGZmZmM4MjljYWE3ZDBiZDM1NWJiNGExNGIzMjJjNyIsImlzRGRwaUVuYWJsZWQiOiJOIiwiaXNNdGZFbmFibGVkIjoiTiIsImZ5X2lkIjoiWFAxNDQxOCIsImFwcFR5cGUiOjEwMCwiZXhwIjoxNzc4MjAwMjAwLCJpYXQiOjE3NzgxMjU2NDMsImlzcyI6ImFwaS5meWVycy5pbiIsIm5iZiI6MTc3ODEyNTY0Mywic3ViIjoiYWNjZXNzX3Rva2VuIn0.MCbqhBZ9UGo4gcE7-n-RVjkVK1qI3fxdBRZlMSoiMNs"
-
+CLIENT_ID = os.environ.get("CLIENT_ID")
+ACCESS_TOKEN = os.environ.get("ACCESS_TOKEN")
 FULL_TOKEN = CLIENT_ID + ":" + ACCESS_TOKEN
 
 # -------- USER INPUT --------
-expiry_day = input("Enter expiry DAY (e.g. 12): ")
-expiry_month = input("Enter expiry MONTH (e.g. 05): ")
-expiry_year = input("Enter expiry YEAR last 2 digits (e.g. 26): ")
-strike = input("Enter STRIKE (e.g. 24350): ")
+expiry_day = os.environ.get("EXPIRY_DAY", "12")
+expiry_month = os.environ.get("EXPIRY_MONTH", "05")
+expiry_year = os.environ.get("EXPIRY_YEAR", "26")
+strike = os.environ.get("STRIKE", "24200")
 
 # -------- SYMBOL BUILD --------
 expiry_code = expiry_year + str(int(expiry_month)) + expiry_day
-
 CE_SYMBOL = f"NSE:NIFTY{expiry_code}{strike}CE"
 PE_SYMBOL = f"NSE:NIFTY{expiry_code}{strike}PE"
-
-
 SYMBOLS = [CE_SYMBOL, PE_SYMBOL]
-
 print("\nUsing Symbols:")
 print(CE_SYMBOL)
 print(PE_SYMBOL)
 
 # -------- TELEGRAM --------
-BOT_TOKEN = "8618908628:AAE1gxoHEVK9dzbb5RCBcrxkesMbMpW3Svw"
-CHAT_ID = "6815374872"
+BOT_TOKEN = os.environ.get("BOT_TOKEN")
+CHAT_ID = os.environ.get("CHAT_ID")
 
 # -------- EMAIL --------
-EMAIL = "parigyanbarman23@gmail.com"
-APP_PASSWORD = "lnrf zoyg mngv xrir"
-TO_EMAIL = ["barmanparigyan@gmail.com", "abhigyanbarman@gmail.com"]  # multiple emails
+EMAIL = os.environ.get("EMAIL")
+APP_PASSWORD = os.environ.get("APP_PASSWORD")
+TO_EMAIL = ["barmanparigyan@gmail.com", "abhigyanbarman@gmail.com"]
 
 # -------- GLOBALS --------
 ce_price = 0
@@ -59,47 +55,35 @@ def send_email(msg):
         server = smtplib.SMTP("smtp.gmail.com", 587)
         server.starttls()
         server.login(EMAIL, APP_PASSWORD)
-
         for receiver in TO_EMAIL:
             message = MIMEText(msg)
             message["Subject"] = "🚀 Straddle Alert"
             message["From"] = EMAIL
             message["To"] = receiver
-
             server.sendmail(EMAIL, receiver, message.as_string())
-
         server.quit()
         print("Email sent ✔")
-
     except Exception as e:
         print("Email error:", e)
 
 # -------- WEBSOCKET --------
 def onmessage(msg):
     global ce_price, pe_price, last_alerted
-
     if 'ltp' not in msg:
         return
-
     symbol = msg['symbol']
     price = msg['ltp']
-
     if "CE" in symbol:
         ce_price = price
     elif "PE" in symbol:
         pe_price = price
-
     if ce_price and pe_price:
         combined = ce_price + pe_price
         level = get_level()
-
         print(f"Combined: {combined} | Level: {level}")
-
         if level:
-
             # 🚀 BREAKOUT
             if combined > level and not last_alerted:
-
                 alert_msg = (
                     f"🚀 Straddle Breakout\n\n"
                     f"Strike : {strike}\n"
@@ -108,15 +92,11 @@ def onmessage(msg):
                     f"Combined: {round(combined,2)}\n"
                     f"CE: {ce_price} | PE: {pe_price}"
                 )
-
                 send_telegram(alert_msg)
                 send_email(alert_msg)
-
                 last_alerted = True
-
             # 🔻 BREAKDOWN
             elif combined < level and last_alerted:
-
                 alert_msg = (
                     f"🔻 Straddle Breakdown\n\n"
                     f"Strike : {strike}\n"
@@ -125,10 +105,8 @@ def onmessage(msg):
                     f"Combined: {round(combined,2)}\n"
                     f"CE: {ce_price} | PE: {pe_price}"
                 )
-
                 send_telegram(alert_msg)
                 send_email(alert_msg)
-
                 last_alerted = False
 
 def onopen():
@@ -151,5 +129,4 @@ fyers = data_ws.FyersDataSocket(
     on_close=onclose,
     reconnect=True
 )
-
 fyers.connect()
