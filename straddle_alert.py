@@ -45,12 +45,20 @@ def get_level():
     return float(level) if level else None
 
 def send_telegram(msg):
-    url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
-    requests.get(url, params={"chat_id": CHAT_ID, "text": msg})
+    try:
+        url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+        response = requests.get(url, params={"chat_id": CHAT_ID, "text": msg}, timeout=10)
+        if response.status_code == 200:
+            print("Telegram sent ✔")
+        else:
+            print(f"Telegram error: {response.status_code}")
+    except Exception as e:
+        print(f"Telegram error: {e}")
 
 def send_email(msg):
     try:
-        server = smtplib.SMTP("smtp.gmail.com", 587)
+        print(f"Attempting to send email to {TO_EMAIL}...")
+        server = smtplib.SMTP("smtp.gmail.com", 587, timeout=10)
         server.starttls()
         server.login(EMAIL, APP_PASSWORD)
         for receiver in TO_EMAIL:
@@ -61,8 +69,12 @@ def send_email(msg):
             server.sendmail(EMAIL, receiver, message.as_string())
         server.quit()
         print("Email sent ✔")
+    except smtplib.SMTPAuthenticationError as e:
+        print(f"Email auth error: Check your email/app password - {e}")
+    except smtplib.SMTPException as e:
+        print(f"Email SMTP error: {e}")
     except Exception as e:
-        print("Email error:", e)
+        print(f"Email error: {e}")
 
 # -------- WEBSOCKET --------
 def onmessage(msg):
@@ -90,6 +102,7 @@ def onmessage(msg):
                     f"Combined: {round(combined,2)}\n"
                     f"CE: {ce_price} | PE: {pe_price}"
                 )
+                print("🚀 BREAKOUT ALERT TRIGGERED")
                 send_telegram(alert_msg)
                 send_email(alert_msg)
                 last_alerted = True
@@ -103,6 +116,7 @@ def onmessage(msg):
                     f"Combined: {round(combined,2)}\n"
                     f"CE: {ce_price} | PE: {pe_price}"
                 )
+                print("🔻 BREAKDOWN ALERT TRIGGERED")
                 send_telegram(alert_msg)
                 send_email(alert_msg)
                 last_alerted = False
