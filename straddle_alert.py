@@ -1,8 +1,8 @@
 from fyers_apiv3.FyersWebsocket import data_ws
 import requests
-import smtplib
-from email.mime.text import MIMEText
 import os
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail
 
 # -------- CONFIG --------
 CLIENT_ID = os.environ.get("CLIENT_ID")
@@ -29,9 +29,9 @@ print(PE_SYMBOL)
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
 CHAT_ID = os.environ.get("CHAT_ID")
 
-# -------- EMAIL --------
-EMAIL = os.environ.get("EMAIL")
-APP_PASSWORD = os.environ.get("APP_PASSWORD")
+# -------- EMAIL (SendGrid) --------
+SENDGRID_API_KEY = os.environ.get("SENDGRID_API_KEY")
+FROM_EMAIL = os.environ.get("EMAIL")
 TO_EMAIL = os.environ.get("TO_EMAIL", "barmanparigyan@gmail.com,abhigyanbarman@gmail.com").split(",")
 
 # -------- GLOBALS --------
@@ -58,20 +58,20 @@ def send_telegram(msg):
 def send_email(msg):
     try:
         print(f"Attempting to send email to {TO_EMAIL}...")
-        server = smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=10)
-        server.login(EMAIL, APP_PASSWORD)
+        sg = SendGridAPIClient(SENDGRID_API_KEY)
+        
         for receiver in TO_EMAIL:
-            message = MIMEText(msg)
-            message["Subject"] = "🚀 Straddle Alert"
-            message["From"] = EMAIL
-            message["To"] = receiver
-            server.sendmail(EMAIL, receiver, message.as_string())
-        server.quit()
-        print("Email sent ✔")
-    except smtplib.SMTPAuthenticationError as e:
-        print(f"Email auth error: Check your email/app password - {e}")
-    except smtplib.SMTPException as e:
-        print(f"Email SMTP error: {e}")
+            email = Mail(
+                from_email=FROM_EMAIL,
+                to_emails=receiver,
+                subject="🚀 Straddle Alert",
+                plain_text_content=msg
+            )
+            response = sg.send(email)
+            if response.status_code == 202:
+                print(f"Email sent to {receiver} ✔")
+            else:
+                print(f"Email error: {response.status_code}")
     except Exception as e:
         print(f"Email error: {e}")
 
