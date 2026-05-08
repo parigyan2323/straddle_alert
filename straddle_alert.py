@@ -20,6 +20,7 @@ expiry_code = expiry_year + str(int(expiry_month)) + expiry_day
 CE_SYMBOL = f"NSE:NIFTY{expiry_code}{strike}CE"
 PE_SYMBOL = f"NSE:NIFTY{expiry_code}{strike}PE"
 SYMBOLS = [CE_SYMBOL, PE_SYMBOL]
+
 print("\nUsing Symbols:")
 print(CE_SYMBOL)
 print(PE_SYMBOL)
@@ -31,7 +32,7 @@ CHAT_ID = os.environ.get("CHAT_ID")
 # -------- EMAIL --------
 EMAIL = os.environ.get("EMAIL")
 APP_PASSWORD = os.environ.get("APP_PASSWORD")
-TO_EMAIL = ["barmanparigyan@gmail.com", "abhigyanbarman@gmail.com"]
+TO_EMAIL = os.environ.get("TO_EMAIL", "barmanparigyan@gmail.com,abhigyanbarman@gmail.com").split(",")
 
 # -------- GLOBALS --------
 ce_price = 0
@@ -40,11 +41,8 @@ last_alerted = False
 
 # -------- FUNCTIONS --------
 def get_level():
-    try:
-        with open("level.txt", "r") as f:
-            return float(f.read().strip())
-    except:
-        return None
+    level = os.environ.get("LEVEL")
+    return float(level) if level else None
 
 def send_telegram(msg):
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
