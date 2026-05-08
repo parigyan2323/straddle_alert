@@ -24,6 +24,11 @@ print("\nUsing Symbols:")
 print(CE_SYMBOL)
 print(PE_SYMBOL)
 
+print(f"\n--- DEBUG: Environment Variables ---")
+print(f"LEVEL from env: {os.environ.get('LEVEL')}")
+print(f"All env keys: {list(os.environ.keys())}")
+print(f"--- END DEBUG ---\n")
+
 # -------- TELEGRAM --------
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
 CHAT_ID = os.environ.get("CHAT_ID")
@@ -40,11 +45,12 @@ last_alerted = False
 
 # -------- FUNCTIONS --------
 def get_level():
-    try:
-        with open("level.txt", "r") as f:
-            return float(f.read().strip())
-    except:
-        return None
+    level = os.environ.get("LEVEL")
+    if level:
+        return float(level)
+    # Fallback to 359 if not set
+    print("WARNING: LEVEL not found in environment, using fallback 359")
+    return 359.0
 
 def send_telegram(msg):
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
