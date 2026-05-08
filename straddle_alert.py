@@ -58,8 +58,7 @@ def send_telegram(msg):
 def send_email(msg):
     try:
         print(f"Attempting to send email to {TO_EMAIL}...")
-        server = smtplib.SMTP("smtp.gmail.com", 587, timeout=10)
-        server.starttls()
+        server = smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=10)
         server.login(EMAIL, APP_PASSWORD)
         for receiver in TO_EMAIL:
             message = MIMEText(msg)
